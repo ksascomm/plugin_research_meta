@@ -15,7 +15,16 @@ $research_meta_metabox = array(
 	'context' => 'normal',
 	'priority' => 'high',
 	'fields' => array(
-
+				array(
+					'name' 			=> 'Last Name',
+					'desc' 			=> 'For indexing',
+					'id' 			=> 'ecpt_award_alpha',
+					'class' 		=> 'ecpt_award_alpha',
+					'type' 			=> 'text',
+					'rich_editor' 	=> 0,			
+					'max' 			=> 0,
+					'std'			=> ''													
+				),
 				array(
 					'name' 			=> 'Award Type/Name',
 					'desc' 			=> '',
@@ -27,7 +36,7 @@ $research_meta_metabox = array(
 					'std'			=> ''													
 				),
 				array(
-					'name' 			=> 'Class Year',
+					'name' 			=> 'Year',
 					'desc' 			=> '',
 					'id' 			=> 'ecpt_class_year',
 					'class' 		=> 'ecpt_class_year',
@@ -178,5 +187,105 @@ function ecpt_research_meta_save($post_id) {
 		} elseif ('' == $new && $old) {
 			delete_post_meta($post_id, $field['id'], $old);
 		}
+	}
+}
+
+
+add_filter( 'manage_edit-profile_columns', 'my_profile_columns' ) ;
+
+function my_profile_columns( $columns ) {
+
+	$columns = array(
+		'cb' => '<input type="checkbox" />',
+		'title' => __( 'Name' ),
+		'affiliations' => __( 'Affiliations' ),
+		'year' => __('Year' ),
+		'indexing' => __('Index Name' ),
+		'date' => __( 'Date' )
+	);
+
+	return $columns;
+}
+
+add_action( 'manage_profile_posts_custom_column', 'my_manage_profile_columns', 10, 2 );
+
+function my_manage_profile_columns( $column, $post_id ) {
+	global $post;
+
+	switch( $column ) {
+
+		/* If displaying the 'role' column. */
+		case 'affiliations' :
+
+			/* Get the roles for the post. */
+			$terms = get_the_terms( $post_id, 'affiliation' );
+			$terms2 = get_the_terms( $post_id, 'academicdepartment' );
+			/* If terms were found. */
+			if ( !empty( $terms ) || !empty( $terms2 ) ) {
+				
+				$out = array();
+				$out2 = array();
+
+				if ( !empty( $terms ) ) {
+					/* Loop through each term, linking to the 'edit posts' page for the specific term. */
+					foreach ( $terms as $term ) {
+						$out[] = sprintf( '<a href="%s">%s</a>',
+							esc_url( add_query_arg( array( 'post_type' => $post->post_type, 'affiliation' => $term->slug ), 'edit.php' ) ),
+							esc_html( sanitize_term_field( 'name', $term->name, $term->term_id, 'affiliation', 'display' ) )
+						);
+					}
+				}
+				
+				if ( !empty( $terms2) ) {
+					foreach ( $terms2 as $term2 ) {
+						$out2[] = sprintf( '<a href="%s">%s</a>',
+							esc_url( add_query_arg( array( 'post_type' => $post->post_type, 'academicdepartment' => $term2->slug ), 'edit.php' ) ),
+							esc_html( sanitize_term_field( 'name', $term2->name, $term2->term_id, 'academicdepartment', 'display' ) )
+						);
+					}
+				}
+			
+				$all_terms = array_merge($out, $out2);
+				/* Join the terms, separating them with a comma. */
+				echo join( ', ', $all_terms );
+			}
+
+			/* If no terms were found, output a default message. */
+			else {
+				_e( 'No Affiliations' );
+			}
+
+			break;
+		case 'year' :
+			
+			/* Get the thumbnail */
+			$award_year = get_post_meta($post->ID, 'ecpt_class_year', true);
+
+			if ( empty( $award_year ) )
+				echo __( 'No Year Assigned' );
+
+			/* If there is a duration, append 'minutes' to the text string. */
+			else
+				
+				echo $award_year;
+
+			break;
+		case 'indexing' :
+			
+			/* Get the thumbnail */
+			$index_name = get_post_meta($post->ID, 'ecpt_award_alpha', true);
+
+			if ( empty( $index_name ) )
+				echo __( 'No Name Given' );
+
+			/* If there is a duration, append 'minutes' to the text string. */
+			else
+				
+				echo $index_name;
+
+			break;
+		/* Just break out of the switch statement for everything else. */
+		default :
+			break;
 	}
 }
