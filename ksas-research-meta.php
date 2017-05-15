@@ -201,6 +201,7 @@ function my_profile_columns( $columns ) {
 		'affiliations' => __( 'Affiliations' ),
 		'year' => __('Year' ),
 		'indexing' => __('Index Name' ),
+		'category' => __('Category' ),
 		'date' => __( 'Date' )
 	);
 
@@ -256,6 +257,35 @@ function my_manage_profile_columns( $column, $post_id ) {
 			}
 
 			break;
+
+		case 'category' :
+
+		$terms3 = get_the_terms( $post_id, 'category' );
+
+					/* If terms were found. */
+			if ( !empty( $terms3 ) ) {
+
+				$out3 = array();
+
+				/* Loop through each term, linking to the 'edit posts' page for the specific term. */
+				foreach ( $terms3 as $term3 ) {
+					$out3[] = sprintf( '<a href="%s">%s</a>',
+						esc_url( add_query_arg( array( 'post_type' => $post->post_type, 'category' => $term3->slug ), 'edit.php' ) ),
+						esc_html( sanitize_term_field( 'name', $term3->name, $term3->term_id, 'category', 'display' ) )
+					);
+				}
+
+				/* Join the terms, separating them with a comma. */
+				echo join( ', ', $out3 );
+			}
+
+			/* If no terms were found, output a default message. */
+			else {
+				_e( 'No Category Assigned' );
+			}
+
+		break;	
+
 		case 'year' :
 			
 			/* Get the thumbnail */
@@ -284,6 +314,7 @@ function my_manage_profile_columns( $column, $post_id ) {
 				echo $index_name;
 
 			break;
+
 		/* Just break out of the switch statement for everything else. */
 		default :
 			break;
